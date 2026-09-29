@@ -39,9 +39,9 @@ export function SaveIndicator() {
 
 export function Shell({ children }: { children: ReactNode }) {
   const [loc] = useLocation();
-  const { journalToday, setViewDate, archived } = useJournal();
+  const { today, setViewDate, archived } = useJournal();
   const tabs = [
-    { href: '/', label: fmtTab(journalToday), icon: NotebookPen, id: 'daily' },
+    { href: '/', label: fmtTab(today), icon: NotebookPen, id: 'daily' },
     { href: '/weekly', label: 'Weekly', icon: CalendarDays, id: 'weekly' },
     { href: '/progress', label: 'Progress', icon: BarChart3, id: 'progress' },
     { href: '/history', label: 'History', icon: Sprout, id: 'history' },

@@ -1,46 +1,47 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { toKey } from '@/lib/dates';
 
 /** Local device date, re-checked on focus, visibility, wake, periodically and at midnight. */
-export function useToday(): string {
+export function useToday(): [string, () => void] {
   const [today, setToday] = useState(() => toKey(new Date()));
+  const check = useCallback(() => setToday((prev) => {
+    const k = toKey(new Date());
+    return k === prev ? prev : k;
+  }), []);
 
   useEffect(() => {
-    const check = () => setToday((prev) => {
-      const k = toKey(new Date());
-      return k === prev ? prev : k;
-    });
     let midnight: ReturnType<typeof setTimeout>;
     const arm = () => {
       const now = new Date();
-      const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 1);
+      const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+      clearTimeout(midnight);
       midnight = setTimeout(() => {
         check();
         arm();
-      }, next.getTime() - now.getTime());
+      }, Math.max(0, next.getTime() - now.getTime()));
+    };
+    const wake = () => {
+      check();
+      arm();
     };
     arm();
     const interval = setInterval(check, 30_000);
     const onVis = () => {
-      if (document.visibilityState === 'visible') {
-        check();
-        clearTimeout(midnight);
-        arm();
-      }
+      if (document.visibilityState === 'visible') wake();
     };
     document.addEventListener('visibilitychange', onVis);
-    window.addEventListener('focus', check);
-    window.addEventListener('pageshow', check);
-    window.addEventListener('online', check);
+    window.addEventListener('focus', wake);
+    window.addEventListener('pageshow', wake);
+    window.addEventListener('online', wake);
     return () => {
       clearTimeout(midnight);
       clearInterval(interval);
       document.removeEventListener('visibilitychange', onVis);
-      window.removeEventListener('focus', check);
-      window.removeEventListener('pageshow', check);
-      window.removeEventListener('online', check);
+      window.removeEventListener('focus', wake);
+      window.removeEventListener('pageshow', wake);
+      window.removeEventListener('online', wake);
     };
-  }, []);
+  }, [check]);
 
-  return today;
+  return [today, check];
 }

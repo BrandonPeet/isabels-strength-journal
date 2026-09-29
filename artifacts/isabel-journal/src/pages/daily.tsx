@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useJournal } from '@/store/journal';
 import { ENCOURAGEMENTS, MORNING_ROUTINE, WORKOUT_SHORT, WORKOUTS } from '@/lib/program';
 import { END_KEY, START_KEY, addDays, dayOfWeek, daysBetween, fmtLong, weekOf, weekRange, fmtShortMD } from '@/lib/dates';
-import { morningPct, nextSession, recoveryIndex, weekStats, workoutForDate } from '@/lib/logic';
+import { morningPct, nextSession, recoveryIndex, unfinishedBefore, weekStats, workoutForDate } from '@/lib/logic';
 import { emptyDay, type DayType, type Mark } from '@/lib/types';
 import { MarkToggle, SectionTitle, Sprig, StatCard, YesNo, Pill } from '@/components/journal/bits';
 import { NoteField, WorkoutPanel } from '@/components/journal/workout';
@@ -30,6 +30,7 @@ export default function Daily() {
   const pct = morningPct(entry);
   const recIdx = entry.trained === 'no' && (entry.dayType === 'planned' || entry.dayType === 'needed') ? recoveryIndex(days, date, week) : 0;
   const upcoming = workoutForDate(days, date);
+  const unfinished = unfinishedBefore(days, date);
   const range = weekRange(week);
 
   const setMorningItem = (id: string, v: Mark | undefined) =>
@@ -42,6 +43,8 @@ export default function Daily() {
   const answerTrained = (v: 'yes' | 'no') =>
     updateDay(date, (d) => {
       if (v === 'yes') {
+        // Resolve the older session first; never create a second workout for it.
+        if (unfinished && !d.workout) return d;
         const workout = d.workout ?? {
           num: workoutForDate(days, date),
           status: 'in_progress' as const,
@@ -175,12 +178,42 @@ export default function Daily() {
       {/* 5. Training question */}
       <section className="paper-card p-5">
         <SectionTitle eyebrow="Training" title="Did you work out today?" />
+        {unfinished?.workout && (
+          <div className="rounded-2xl bg-gold-soft border border-[hsl(40_45%_80%)] p-4 mb-5" data-testid="notice-unfinished-workout">
+            <p className="text-sm font-semibold text-bark">You have an unfinished workout from {fmtShortMD(unfinished.date)}.</p>
+            <p className="font-display text-xl font-semibold text-bark mt-1">{WORKOUTS[unfinished.workout.num].title}</p>
+            <div className="grid grid-cols-2 gap-2 mt-3">
+              <button
+                type="button"
+                disabled={!isEditable(unfinished.date)}
+                onClick={() => {
+                  setViewDate(unfinished.date);
+                  requestAnimationFrame(() => document.querySelector(`[data-testid="panel-workout-${unfinished.workout!.num}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+                }}
+                data-testid="button-resume-workout"
+                className="min-h-12 rounded-2xl bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-60"
+              >
+                Resume Workout
+              </button>
+              <button
+                type="button"
+                disabled={!isEditable(unfinished.date)}
+                onClick={() => updateDay(unfinished.date, (d) => d.workout?.status === 'in_progress' ? { ...d, workout: { ...d.workout, leftUnfinished: true } } : d)}
+                data-testid="button-leave-unfinished"
+                className="min-h-12 rounded-2xl bg-card border border-border text-bark text-sm font-semibold disabled:opacity-60"
+              >
+                Leave Unfinished
+              </button>
+            </div>
+            {!entry.workout && <p className="text-xs text-muted-foreground mt-2">Resolve this session before starting another workout.</p>}
+          </div>
+        )}
         {!entry.trained && (
           <p className="text-sm text-muted-foreground -mt-1 mb-3">
             Up next: <b className="text-bark">Workout {upcoming}</b> — {WORKOUTS[upcoming].title}
           </p>
         )}
-        <YesNo testId="trained" value={entry.trained} disabled={!editable} onChange={answerTrained} />
+        <YesNo testId="trained" value={entry.trained} disabled={!editable} disableYes={!!unfinished && !entry.workout} onChange={answerTrained} />
         {entry.trained === 'no' && (
           <div className="mt-5">
             <div className="eyebrow mb-2">What kind of day was it?</div>
@@ -237,7 +270,7 @@ export default function Daily() {
         <WorkoutPanel
           entry={entry}
           days={days}
-          disabled={!editable}
+          disabled={!editable || !!entry.workout.leftUnfinished}
           onChange={(fn) => updateDay(date, (d) => (d.workout ? { ...d, workout: fn(d.workout) } : d))}
         />
       )}

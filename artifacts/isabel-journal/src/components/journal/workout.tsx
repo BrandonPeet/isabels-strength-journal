@@ -301,7 +301,7 @@ export function WorkoutPanel({
           <div className="flex items-center gap-2">
             <span className="text-xs uppercase tracking-[0.18em] font-semibold text-[hsl(40_60%_82%)]">Workout {w.num} of 5</span>
             <span className={cn('text-[0.7rem] font-bold uppercase tracking-wider rounded-full px-2 py-0.5', completed ? 'bg-[hsl(96_30%_80%)] text-[hsl(100_30%_22%)]' : 'bg-[hsl(40_60%_90%/.2)] text-[hsl(40_60%_92%)]')} data-testid="status-workout">
-              {completed ? 'Completed' : 'In progress'}
+              {completed ? 'Completed' : w.leftUnfinished ? 'Left unfinished' : 'In progress'}
             </span>
           </div>
           <h3 className="font-display text-[2rem] leading-[1.05] font-semibold mt-2">{def.title}</h3>
@@ -365,7 +365,7 @@ export function WorkoutPanel({
       </div>
 
       <AnimatePresence mode="wait">
-        {!completed ? (
+        {!completed && !w.leftUnfinished ? (
           <motion.div key="finish" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
             <button
               type="button"
@@ -381,7 +381,7 @@ export function WorkoutPanel({
             </button>
             <p className="text-center text-xs text-muted-foreground mt-2">Everything is already saved. Finishing marks Workout {w.num} complete and moves you to the next session.</p>
           </motion.div>
-        ) : (
+        ) : completed ? (
           <motion.div
             key="done"
             initial={justFinished ? { opacity: 0, scale: 0.96 } : false}
@@ -410,6 +410,10 @@ export function WorkoutPanel({
               </button>
             )}
           </motion.div>
+        ) : (
+          <div className="rounded-2xl bg-gold-soft border border-[hsl(40_45%_80%)] px-4 py-3 text-sm text-bark text-center" data-testid="status-workout-left-unfinished">
+            This workout was left unfinished. Your notes and sets are preserved, but it does not count as complete.
+          </div>
         )}
       </AnimatePresence>
     </div>

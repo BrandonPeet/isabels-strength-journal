@@ -33,6 +33,7 @@ export default function SettingsPage() {
 
   const onFile = async (f: File | undefined) => {
     setImportError(null);
+    setPendingImport(null);
     if (!f) return;
     try {
       const parsed = parseBackup(await f.text());

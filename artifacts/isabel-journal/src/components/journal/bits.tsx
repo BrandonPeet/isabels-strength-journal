@@ -50,11 +50,12 @@ export function SectionTitle({ eyebrow, title, right }: { eyebrow?: string; titl
 
 /** Large Yes / No question buttons */
 export function YesNo({
-  value, onChange, disabled, yesLabel = 'Yes', noLabel = 'No', testId,
+  value, onChange, disabled, disableYes, yesLabel = 'Yes', noLabel = 'No', testId,
 }: {
   value?: 'yes' | 'no';
   onChange: (v: 'yes' | 'no') => void;
   disabled?: boolean;
+  disableYes?: boolean;
   yesLabel?: string;
   noLabel?: string;
   testId: string;
@@ -70,7 +71,7 @@ export function YesNo({
             type="button"
             role="radio"
             aria-checked={active}
-            disabled={disabled}
+            disabled={disabled || (yes && disableYes)}
             data-testid={`button-${testId}-${v}`}
             onClick={() => onChange(v)}
             className={cn(

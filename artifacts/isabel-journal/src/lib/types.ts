@@ -31,6 +31,8 @@ export interface WorkoutLog {
   status: 'in_progress' | 'completed';
   startedAt: string;
   completedAt?: string;
+  /** Archived without finishing; does not advance the sequence. */
+  leftUnfinished?: boolean;
   prep: Record<string, Mark>;
   exercises: Record<string, ExerciseLog>;
   run?: RunLog;

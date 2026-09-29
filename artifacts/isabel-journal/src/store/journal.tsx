@@ -3,7 +3,7 @@ import { loadAll, putDays, putSettings, replaceAll, requestPersistence } from '@
 import { DEFAULT_SETTINGS, emptyDay, type DayEntry, type Settings } from '@/lib/types';
 import type { Days } from '@/lib/logic';
 import { useToday } from '@/hooks/use-today';
-import { END_KEY, START_KEY, clampToJournal } from '@/lib/dates';
+import { END_KEY, START_KEY, clampToJournal, toKey } from '@/lib/dates';
 
 export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
@@ -45,13 +45,16 @@ export function JournalProvider({ children, loading, failed }: {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [restoring, setRestoring] = useState(false);
   const [viewOverride, setViewOverride] = useState<string | null>(null);
-  const today = useToday();
+  const [today, refreshToday] = useToday();
 
   const daysRef = useRef<Days>({});
+  const settingsRef = useRef<Settings>(DEFAULT_SETTINGS);
   const pending = useRef(new Map<string, DayEntry>());
   const pendingSettings = useRef<Settings | null>(null);
   const flushing = useRef(false);
+  const restoringRef = useRef(false);
   const readyRef = useRef(false);
 
   const doLoad = useCallback(async () => {
@@ -62,7 +65,10 @@ export function JournalProvider({ children, loading, failed }: {
       list.forEach((d) => (map[d.date] = d));
       daysRef.current = map;
       setDays(map);
-      if (s) setSettings({ ...DEFAULT_SETTINGS, ...s });
+      if (s) {
+        settingsRef.current = { ...DEFAULT_SETTINGS, ...s };
+        setSettings(settingsRef.current);
+      }
       readyRef.current = true;
       setLoad({ kind: 'ready' });
       void requestPersistence();
@@ -98,10 +104,12 @@ export function JournalProvider({ children, loading, failed }: {
           throw err;
         }
       }
+      saveErrorRef.current = null;
       setSaveError(null);
       setSaveStatus('saved');
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'Could not save to this device.');
+      saveErrorRef.current = err instanceof Error ? err.message : 'Could not save to this device.';
+      setSaveError(saveErrorRef.current);
       setSaveStatus('error');
     } finally {
       flushing.current = false;
@@ -113,7 +121,7 @@ export function JournalProvider({ children, loading, failed }: {
 
   const updateDay = useCallback(
     (date: string, fn: (d: DayEntry) => DayEntry) => {
-      if (!readyRef.current) return;
+      if (!readyRef.current || restoringRef.current) return;
       const cur = daysRef.current[date] ?? emptyDay(date);
       const next = { ...fn(cur), date, updatedAt: new Date().toISOString() };
       daysRef.current = { ...daysRef.current, [date]: next };
@@ -127,47 +135,62 @@ export function JournalProvider({ children, loading, failed }: {
 
   const updateSettings = useCallback(
     (s: Partial<Settings>) => {
-      setSettings((prev) => {
-        const n = { ...prev, ...s };
-        pendingSettings.current = n;
-        try {
-          localStorage.setItem('isabel-journal-settings', JSON.stringify(n));
-        } catch {
-          /* ignore */
-        }
-        queueMicrotask(() => void flush());
-        return n;
-      });
+      if (!readyRef.current || restoringRef.current) return;
+      const n = { ...settingsRef.current, ...s };
+      settingsRef.current = n;
+      setSettings(n);
+      pendingSettings.current = n;
+      try {
+        localStorage.setItem('isabel-journal-settings', JSON.stringify(n));
+      } catch {
+        /* ignore */
+      }
+      queueMicrotask(() => void flush());
     },
     [flush],
   );
 
   const restore = useCallback(async (list: DayEntry[], s: Settings) => {
-    // wait for in-flight writes, drop queued ones (they belong to the replaced journal)
-    while (flushing.current) await new Promise((r) => setTimeout(r, 30));
-    pending.current.clear();
-    pendingSettings.current = null;
-    setSaveStatus('saving');
+    if (restoringRef.current) throw new Error('A journal replacement is already in progress.');
+    restoringRef.current = true;
+    setRestoring(true);
     try {
+      // Finish existing writes before replacing the data. If they cannot be saved,
+      // do not replace anything: the queued entries remain available for Retry.
+      while (flushing.current) await new Promise((r) => setTimeout(r, 30));
+      if (pending.current.size || pendingSettings.current) {
+        saveErrorRef.current = null;
+        await flush();
+      }
+      if (pending.current.size || pendingSettings.current || saveErrorRef.current) {
+        throw new Error(saveErrorRef.current ?? 'Could not save pending journal changes before import. Retry saving first.');
+      }
+      setSaveStatus('saving');
       await replaceAll(list, s);
+      const map: Days = {};
+      list.forEach((d) => (map[d.date] = d));
+      daysRef.current = map;
+      settingsRef.current = s;
+      setDays(map);
+      setSettings(s);
+      saveErrorRef.current = null;
+      setSaveError(null);
+      setSaveStatus('saved');
+      setViewOverride(null);
     } catch (e) {
+      saveErrorRef.current = e instanceof Error ? e.message : 'Restore failed.';
       setSaveStatus('error');
-      setSaveError(e instanceof Error ? e.message : 'Restore failed.');
+      setSaveError(saveErrorRef.current);
       throw e;
+    } finally {
+      restoringRef.current = false;
+      setRestoring(false);
     }
-    const map: Days = {};
-    list.forEach((d) => (map[d.date] = d));
-    daysRef.current = map;
-    setDays(map);
-    setSettings(s);
-    setSaveError(null);
-    setSaveStatus('saved');
-    setViewOverride(null);
-  }, []);
+  }, [flush]);
 
   useEffect(() => {
     const warn = (e: BeforeUnloadEvent) => {
-      if (pending.current.size || flushing.current) {
+      if (pending.current.size || pendingSettings.current || flushing.current || restoringRef.current) {
         e.preventDefault();
         e.returnValue = '';
       }
@@ -179,24 +202,36 @@ export function JournalProvider({ children, loading, failed }: {
   const journalToday = clampToJournal(today);
   const archived = today > END_KEY;
 
-  // If the chosen view date equals the journal's today, follow rollover automatically.
-  const viewDate = viewOverride && viewOverride !== journalToday ? viewOverride : journalToday;
-  const setViewDate = useCallback((d: string | null) => setViewOverride(d), []);
+  // An explicitly selected current day follows midnight; a historical selection stays put.
+  const viewDate = viewOverride ?? journalToday;
+  const setViewDate = useCallback((d: string | null) => {
+    refreshToday(); // Return to Today must read the device clock, not a stale interval value.
+    setViewOverride(d === null || d === clampToJournal(toKey(new Date())) ? null : d);
+  }, [refreshToday]);
 
   const isEditable = useCallback(
-    (date: string) => !archived && date >= START_KEY && date <= END_KEY && date <= journalToday,
-    [archived, journalToday],
+    (date: string) => !restoring && !archived && date >= START_KEY && date <= END_KEY && date <= journalToday,
+    [restoring, archived, journalToday],
   );
 
   const value = useMemo<JournalCtx>(
     () => ({
       days, settings, today, journalToday, archived, viewDate, setViewDate, updateDay, updateSettings, restore,
-      saveStatus, saveError, retrySave: () => { saveErrorRef.current = null; void flush(); }, isEditable,
+      saveStatus, saveError, retrySave: () => { if (!restoringRef.current) { saveErrorRef.current = null; void flush(); } }, isEditable,
     }),
     [days, settings, today, journalToday, archived, viewDate, setViewDate, updateDay, updateSettings, restore, saveStatus, saveError, flush, isEditable],
   );
 
   if (load.kind === 'loading') return <>{loading}</>;
   if (load.kind === 'error') return <>{failed(load.message, () => void doLoad())}</>;
-  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
+  return (
+    <Ctx.Provider value={value}>
+      <div className="contents" inert={restoring}>{children}</div>
+      {restoring && (
+        <div className="fixed inset-0 z-[100] bg-background/80 backdrop-blur-sm flex items-center justify-center px-5" role="status" aria-live="assertive" aria-busy="true">
+          <div className="paper-card p-6 text-center text-bark font-semibold">Replacing journal data… Please keep this page open.</div>
+        </div>
+      )}
+    </Ctx.Provider>
+  );
 }

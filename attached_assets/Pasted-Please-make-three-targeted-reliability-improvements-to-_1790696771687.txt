@@ -1,0 +1,326 @@
+Please make three targeted reliability improvements to Isabel’s Fall Strength Journal.
+
+IMPORTANT:
+The app is currently working well. Do NOT redesign the app, change the visual style, change the workout program, change the workout order, remove existing features, reset stored data, or restructure anything unnecessarily.
+
+Preserve all current user data and all current functionality.
+
+Only make the following three improvements.
+
+==================================================
+1. FIX CURRENT-DATE / MIDNIGHT ROLLOVER LOGIC
+==================================================
+
+The app already displays the actual current date and checks for date changes.
+
+Please make the date rollover logic completely reliable.
+
+Desired behavior:
+
+If Isabel is currently viewing the actual current day and midnight passes, automatically move the Daily page to the new current day.
+
+Example:
+
+She is viewing:
+
+Tuesday, September 29
+
+At midnight it becomes:
+
+Wednesday, September 30
+
+The app should automatically change the active Daily entry to:
+
+Wednesday, September 30
+
+The header should also update immediately.
+
+This should work when:
+
+- the app stays open overnight
+- the browser stays open overnight
+- the PWA stays open overnight
+- the phone goes to sleep and wakes up
+- Safari returns from the background
+- the PWA returns from the background
+- the page regains focus
+- the app is reopened the next day
+
+IMPORTANT HISTORICAL-DATE RULE:
+
+If Isabel intentionally navigated to an older historical date, do NOT suddenly move her away from that date at midnight.
+
+Only automatically roll the selected date forward if she was viewing what was the current day.
+
+Example:
+
+If today is October 10 but Isabel is reviewing October 3, keep her on October 3.
+
+If she is viewing October 10 and midnight changes the date to October 11, automatically move her to October 11.
+
+Also ensure:
+
+“Return to Today”
+
+always takes her to the device’s actual current local date.
+
+The main Daily tab/date label should always represent the correct current date.
+
+Use the user’s local device timezone.
+
+Do not use a hard-coded timezone.
+
+==================================================
+2. HANDLE UNFINISHED WORKOUTS SAFELY
+==================================================
+
+Currently a workout only advances after Isabel presses:
+
+“Finish Workout”
+
+Keep that behavior.
+
+Do NOT advance the workout sequence simply because she clicked:
+
+“Yes, I worked out today.”
+
+However, improve what happens if Isabel starts a workout and closes the app or stops before pressing Finish Workout.
+
+The app must remember the unfinished workout and all sets/reps/weights she already entered.
+
+Nothing should be lost.
+
+If she returns to the SAME DATE:
+
+Resume the unfinished workout exactly where she left off.
+
+If she opens the app on a LATER DATE and the previous workout was never finished:
+
+Do NOT advance to the next workout.
+
+Instead show a clear but simple notice near the workout section:
+
+“You have an unfinished workout from [date].”
+
+Show the workout name underneath.
+
+Example:
+
+“You have an unfinished workout from September 30.
+
+Full Legs A”
+
+Provide two clear options:
+
+1. Resume Workout
+2. Leave Unfinished
+
+If she selects:
+
+RESUME WORKOUT
+
+Open the previously saved workout with all existing exercises, sets, reps, weights, and notes intact.
+
+Do not create duplicate workout history.
+
+Do not erase the original data.
+
+When she eventually presses:
+
+Finish Workout
+
+then advance the workout sequence normally.
+
+If she selects:
+
+LEAVE UNFINISHED
+
+Keep the old record in history as incomplete.
+
+Do NOT count it as a completed workout.
+
+Do NOT advance the workout sequence.
+
+The next workout should still be the same workout number because it was never completed.
+
+Example:
+
+Workout 2 was started but never completed.
+
+The next training session should still be:
+
+Workout 2
+
+NOT Workout 3.
+
+Please keep this interface simple.
+
+Do not add complicated workout-state controls.
+
+==================================================
+3. MAKE BACKUP IMPORT VALIDATION STRICTER
+==================================================
+
+The Export Backup / Import Backup system already exists.
+
+Keep the current backup format if possible so existing backups remain compatible.
+
+Improve import safety.
+
+Before replacing the journal’s current data, validate the backup file carefully.
+
+A valid backup should contain recognizable Isabel’s Fall Strength Journal data and correctly structured fields for the journal.
+
+Validate important data such as:
+
+- backup/app identifier
+- backup version if present
+- daily log structure
+- valid date keys
+- morning routine data
+- workout statuses
+- workout indices
+- exercise entries
+- sets
+- reps
+- weights
+- notes
+- recovery states
+- run data
+- sequence-related data
+
+The importer should tolerate older valid backups from this same app when reasonable.
+
+However:
+
+Do NOT partially import obviously corrupted or unrelated JSON files.
+
+If validation fails:
+
+DO NOT change or overwrite the current journal.
+
+Keep all existing data exactly as it is.
+
+Show:
+
+“This does not appear to be a valid Isabel’s Strength Journal backup. Your current journal has not been changed.”
+
+Import must be effectively all-or-nothing.
+
+Do not erase the current journal before the replacement backup has been successfully parsed and validated.
+
+Before a VALID backup replaces current data, continue showing a confirmation such as:
+
+“Importing this backup will replace the journal currently stored on this device. Continue?”
+
+Only replace the data after confirmation.
+
+After a successful import:
+
+- reload/recalculate weekly statistics
+- recalculate workout sequence
+- recalculate progress
+- refresh History
+- refresh previous-session exercise information
+
+==================================================
+DATA PROTECTION
+==================================================
+
+These updates must NOT erase Isabel’s existing journal.
+
+Do not clear IndexedDB.
+
+Do not clear localStorage.
+
+Do not change storage keys unless absolutely necessary.
+
+If a storage migration is required, migrate the existing data safely rather than replacing it.
+
+Preserve all existing entries.
+
+==================================================
+PLEASE TEST THESE CASES
+==================================================
+
+After making the changes, verify:
+
+TEST 1 — MIDNIGHT
+
+If the selected Daily date is the current day and the device date changes, the app moves to the new current day.
+
+TEST 2 — HISTORICAL DATE
+
+If Isabel is reviewing an older date when midnight passes, keep her on that historical date.
+
+TEST 3 — BACKGROUND
+
+If the phone/app sleeps overnight and the app is opened the next morning, the real current date is displayed.
+
+TEST 4 — UNFINISHED WORKOUT
+
+Start Workout 2.
+
+Enter some sets/reps/weights.
+
+Do not press Finish Workout.
+
+Close/reload the app.
+
+All entered information must remain.
+
+TEST 5 — NEXT DAY WITH UNFINISHED WORKOUT
+
+Move to the next date.
+
+The app should recognize that Workout 2 was never finished.
+
+It must NOT show Workout 3 as the next workout.
+
+TEST 6 — RESUME
+
+Resume the unfinished Workout 2.
+
+All previously entered sets/reps/weights must still be present.
+
+Finish Workout 2.
+
+Only then should Workout 3 become the next workout.
+
+TEST 7 — LEAVE UNFINISHED
+
+Leave an unfinished workout incomplete.
+
+Keep it visible in History as incomplete.
+
+Do not count it as completed.
+
+Do not advance the sequence.
+
+TEST 8 — INVALID BACKUP
+
+Attempt to import unrelated or malformed JSON.
+
+The import must fail gracefully.
+
+The current journal must remain completely unchanged.
+
+TEST 9 — VALID BACKUP
+
+Export a real backup.
+
+Make several changes.
+
+Import the original backup.
+
+The earlier journal state should restore correctly.
+
+==================================================
+FINAL REQUIREMENT
+==================================================
+
+Please make these as small, safe fixes to the existing application.
+
+Do not redesign or rebuild the project.
+
+The current app is working well and I only want these three reliability improvements.

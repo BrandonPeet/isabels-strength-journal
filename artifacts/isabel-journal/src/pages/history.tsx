@@ -10,7 +10,9 @@ function DaySummary({ d }: { d: DayEntry }) {
   const chips = [];
   if (d.morning === 'yes') chips.push(<Pill key="m" tone="sage"><Check className="size-3" strokeWidth={3} /> Morning</Pill>);
   if (d.morning === 'no') chips.push(<Pill key="m" tone="rose"><X className="size-3" strokeWidth={3} /> Morning</Pill>);
-  if (d.trained === 'yes' && d.workout) {
+  if (d.workout?.leftUnfinished) {
+    chips.push(<Pill key="w" tone="gold">Workout {d.workout.num} · left unfinished</Pill>);
+  } else if (d.trained === 'yes' && d.workout) {
     chips.push(
       d.workout.status === 'completed'
         ? <Pill key="w" tone="sage"><Check className="size-3" strokeWidth={3} /> Workout {d.workout.num}</Pill>

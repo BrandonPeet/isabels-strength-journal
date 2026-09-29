@@ -12,6 +12,13 @@ export const isSkipped = (d?: DayEntry) => !!d && d.trained === 'no' && d.dayTyp
 
 const nextAfter = (n: WorkoutNum): WorkoutNum => ((n % 5) + 1) as WorkoutNum;
 
+/** Oldest unresolved session strictly before the selected day. */
+export function unfinishedBefore(days: Days, date: string): DayEntry | undefined {
+  return sortedDays(days).find((d) =>
+    d.date < date && d.trained === 'yes' && d.workout?.status === 'in_progress' && !d.workout.leftUnfinished,
+  );
+}
+
 /** Workout to start on `date`, derived from completed workouts strictly before it (chronological). */
 export function workoutForDate(days: Days, date: string): WorkoutNum {
   let last: WorkoutNum | null = null;
@@ -25,7 +32,9 @@ export function workoutForDate(days: Days, date: string): WorkoutNum {
 /** The session Isabel should do next as of `today`. */
 export function nextSession(days: Days, today: string): WorkoutNum {
   const t = days[today];
-  if (t?.trained === 'yes' && t.workout?.status === 'in_progress') return t.workout.num;
+  if (t?.trained === 'yes' && t.workout?.status === 'in_progress' && !t.workout.leftUnfinished) return t.workout.num;
+  const unfinished = unfinishedBefore(days, today);
+  if (unfinished?.workout) return unfinished.workout.num;
   let last: WorkoutNum | null = null;
   for (const d of sortedDays(days)) if (d.date <= today && isCompletedWorkout(d)) last = d.workout!.num;
   // also include any completed later entries (e.g. archive) — chronological last wins
