@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Isabel’s Fall Strength Journal"
+description = "A private offline-first one-year strength journal with on-device autosave, exact workout sequences, weekly summaries, and JSON backups."
+version = "1.0.0"
+id = "artifacts/isabel-journal"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 26249
+
+[services.development]
+run = "pnpm --filter @workspace/isabel-journal run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/isabel-journal", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/isabel-journal/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "26249"
+BASE_PATH = "/"

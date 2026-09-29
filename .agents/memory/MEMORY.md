@@ -1,0 +1,1 @@
+- [Historical workout identity](journal-sequence.md) — Recalculate the next session without relabeling previously logged exercises.
