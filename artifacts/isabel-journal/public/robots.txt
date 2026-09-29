@@ -1,2 +1,5 @@
+# Crawling must remain allowed so search engines can read the site's
+# noindex, nofollow HTML metadata. Disallowing crawling can leave URL-only
+# search listings. This is not access control.
 User-agent: *
 Allow: /
