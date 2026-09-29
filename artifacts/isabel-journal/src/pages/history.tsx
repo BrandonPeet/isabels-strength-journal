@@ -1,7 +1,7 @@
 import { useLocation } from 'wouter';
 import { Check, ChevronRight, X } from 'lucide-react';
 import { useJournal } from '@/store/journal';
-import { fmtMonthYear, fmtShortMD, fmtWeekday } from '@/lib/dates';
+import { END_KEY, fmtMonthYear, fmtShortMD, fmtWeekday } from '@/lib/dates';
 import { dayHasContent, type DayEntry } from '@/lib/types';
 import { sortedDays } from '@/lib/logic';
 import { EmptyState, Pill } from '@/components/journal/bits';
@@ -46,7 +46,7 @@ export default function History() {
       <section className="rise">
         <div className="eyebrow">Every faithful day</div>
         <h1 className="font-display text-5xl font-semibold text-bark leading-none mt-1">History</h1>
-        <p className="text-muted-foreground mt-2">Tap any day to open it. Changes save instantly and update your weekly reports.</p>
+        <p className="text-muted-foreground mt-2">Tap any day to open it. Journal changes save instantly and update your weekly reports. Older records beyond the tracking period are read-only.</p>
       </section>
 
       {!groups.length ? (
@@ -75,6 +75,7 @@ export default function History() {
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-semibold text-bark mb-1 sr-only">{fmtShortMD(d.date)}</div>
                       <DaySummary d={d} />
+                      {d.date > END_KEY && <p className="text-xs text-muted-foreground mt-1">Saved legacy entry · read-only</p>}
                       {(d.notes || d.workout?.notes) && (
                         <p className="text-xs text-muted-foreground mt-1.5 truncate italic">“{d.notes || d.workout?.notes}”</p>
                       )}

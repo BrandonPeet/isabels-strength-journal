@@ -50,7 +50,9 @@ function optionalMarkMap(v: unknown, validKeys: Set<string>): Record<string, Mar
 }
 
 function validDate(key: unknown): key is string {
-  if (typeof key !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(key) || key < START_KEY || key > END_KEY) return false;
+  // The previous tracking period ended one day later. Keep that one existing
+  // backup date intact as a historical record, never as a writable journal day.
+  if (typeof key !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(key) || key < START_KEY || (key > END_KEY && key !== '2027-09-29')) return false;
   const year = Number(key.slice(0, 4));
   const month = Number(key.slice(5, 7));
   const day = Number(key.slice(8, 10));

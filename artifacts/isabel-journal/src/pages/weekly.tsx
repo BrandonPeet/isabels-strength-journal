@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { ChevronLeft, ChevronRight, Feather, TrendingUp } from 'lucide-react';
 import { useJournal } from '@/store/journal';
@@ -12,6 +12,13 @@ export default function Weekly() {
   const [, navigate] = useLocation();
   const current = weekOf(journalToday);
   const [week, setWeek] = useState(current);
+  const previousCurrent = useRef(current);
+  useEffect(() => {
+    // Follow midnight into the new week only when the current week was selected.
+    const priorWeek = previousCurrent.current;
+    setWeek((selected) => selected === priorWeek ? current : selected);
+    previousCurrent.current = current;
+  }, [current]);
   const s = weekStats(days, week);
   const r = weekRange(week);
   const feedback = weeklyFeedback(s, week === current);

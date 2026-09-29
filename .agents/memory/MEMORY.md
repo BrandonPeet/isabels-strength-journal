@@ -1,2 +1,3 @@
 - [Historical workout identity](journal-sequence.md) — Recalculate the next session without relabeling previously logged exercises.
 - [Search exclusion](search-exclusion.md) — Allow crawling so noindex can be read; link sharing is not access control.
+- [Calendar compatibility](calendar-compatibility.md) — Preserve the old final day as read-only history through backup round-trips.

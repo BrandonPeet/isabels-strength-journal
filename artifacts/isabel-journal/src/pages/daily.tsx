@@ -23,7 +23,8 @@ export default function Daily() {
   const editable = isEditable(date);
   const isToday = date === journalToday;
   const week = weekOf(date);
-  const stats = weekStats(days, week);
+  const currentWeek = weekOf(journalToday);
+  const stats = weekStats(days, currentWeek);
   const next = nextSession(days, journalToday);
   const quote = ENCOURAGEMENTS[((daysBetween(START_KEY, date) % ENCOURAGEMENTS.length) + ENCOURAGEMENTS.length) % ENCOURAGEMENTS.length];
   const beforeStart = today < START_KEY;
@@ -32,6 +33,8 @@ export default function Daily() {
   const upcoming = workoutForDate(days, date);
   const unfinished = unfinishedBefore(days, date);
   const range = weekRange(week);
+  const currentRange = weekRange(currentWeek);
+  const legacyRecord = date > END_KEY;
 
   const setMorningItem = (id: string, v: Mark | undefined) =>
     updateDay(date, (d) => {
@@ -64,7 +67,7 @@ export default function Daily() {
       {/* 1. Date */}
       <section className="rise relative">
         <img src={sprigImg} alt="" aria-hidden="true" className="absolute -right-6 -top-6 w-40 sm:w-52 opacity-80 pointer-events-none select-none" />
-        <p className="text-sm font-semibold text-terracotta relative" data-testid="text-today">Today is {fmtLong(today)}</p>
+        <p className="text-sm font-semibold text-terracotta relative" data-testid="text-today">Today is {fmtLong(today)} · Day {dayOfWeek(today)}</p>
         <h1 className="font-display text-[2.6rem] sm:text-5xl leading-[1] font-semibold text-bark mt-2 relative max-w-[80%]" data-testid="text-view-date">
           {isToday && !beforeStart && !archived ? 'A faithful day' : fmtLong(date).split(',')[0]}
           <span className="block text-[1.35rem] sm:text-2xl italic font-medium text-muted-foreground mt-1.5">
@@ -72,8 +75,10 @@ export default function Daily() {
           </span>
         </h1>
         <div className="flex items-center gap-2 mt-3 relative">
-          <Pill tone="gold">Week {week} · Day {dayOfWeek(date)} of 7</Pill>
-          <span className="text-xs text-muted-foreground">{fmtShortMD(range.start)} – {fmtShortMD(range.end)}</span>
+          {legacyRecord ? <Pill tone="muted">Saved legacy entry · read-only</Pill> : <>
+            <Pill tone="gold">Week {week} · Day {dayOfWeek(date)} of 7</Pill>
+            <span className="text-xs text-muted-foreground">{fmtShortMD(range.start)} – {fmtShortMD(range.end)}</span>
+          </>}
         </div>
 
         <div className="grid grid-cols-[auto_1fr_auto] gap-2 mt-4 relative">
@@ -112,7 +117,7 @@ export default function Daily() {
 
       {beforeStart && (
         <div className="rounded-[1.25rem] border border-[hsl(40_45%_75%)] bg-gold-soft px-4 py-3.5 text-sm text-[hsl(30_40%_26%)] leading-relaxed" data-testid="banner-before-start">
-          <b>The journal begins Tuesday, September 29, 2026</b> — {daysBetween(today, START_KEY)} days from now. You are looking at Day 1. Anything logged here is saved to Day 1.
+          <b>The journal begins Monday, September 28, 2026</b> — {daysBetween(today, START_KEY)} days from now. You are looking at Day 1. Anything logged here is saved to Day 1.
         </div>
       )}
       {archived && (
@@ -136,9 +141,9 @@ export default function Daily() {
       )}
 
       {/* 3. Progress cards */}
-      <section className="grid grid-cols-2 gap-3 rise" aria-label={`Week ${week} progress`}>
-        <StatCard testId="stat-morning" tone="gold" label="Morning Routine" value={stats.morningPct === null ? '—' : `${Math.round(stats.morningPct * 100)}%`} sub={`${stats.morningLogged} of ${range.days.length} days logged`} />
-        <StatCard testId="stat-workouts" tone="sage" label="Workouts" value={<>{stats.workouts}<span className="text-lg text-muted-foreground"> / 5</span></>} sub={`Week ${week}`} />
+      <section className="grid grid-cols-2 gap-3 rise" aria-label={`Current week ${currentWeek} progress`}>
+        <StatCard testId="stat-morning" tone="gold" label="Morning Routine" value={stats.morningPct === null ? '—' : `${Math.round(stats.morningPct * 100)}%`} sub={`${stats.morningLogged} of ${currentRange.days.length} days logged`} />
+        <StatCard testId="stat-workouts" tone="sage" label="Workouts" value={<>{stats.workouts}<span className="text-lg text-muted-foreground"> / 5</span></>} sub={`Week ${currentWeek}`} />
         <StatCard testId="stat-recovery" tone="clay" label="Recovery Days" value={<>{stats.recovery}<span className="text-lg text-muted-foreground"> / 2</span></>} sub={stats.extraRecovery ? `${stats.extraRecovery} beyond plan` : 'Two are planned'} />
         <StatCard testId="stat-next" tone="terracotta" label="Next Session" value={`Workout ${next}`} sub={WORKOUT_SHORT[next]} />
       </section>

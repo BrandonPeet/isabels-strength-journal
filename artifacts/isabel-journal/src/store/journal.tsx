@@ -3,7 +3,7 @@ import { loadAll, putDays, putSettings, replaceAll, requestPersistence } from '@
 import { DEFAULT_SETTINGS, emptyDay, type DayEntry, type Settings } from '@/lib/types';
 import type { Days } from '@/lib/logic';
 import { useToday } from '@/hooks/use-today';
-import { END_KEY, START_KEY, clampToJournal, toKey } from '@/lib/dates';
+import { END_KEY, START_KEY, clampToJournal, inRange, toKey } from '@/lib/dates';
 
 export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
@@ -121,7 +121,7 @@ export function JournalProvider({ children, loading, failed }: {
 
   const updateDay = useCallback(
     (date: string, fn: (d: DayEntry) => DayEntry) => {
-      if (!readyRef.current || restoringRef.current) return;
+      if (!readyRef.current || restoringRef.current || !inRange(date)) return;
       const cur = daysRef.current[date] ?? emptyDay(date);
       const next = { ...fn(cur), date, updatedAt: new Date().toISOString() };
       daysRef.current = { ...daysRef.current, [date]: next };

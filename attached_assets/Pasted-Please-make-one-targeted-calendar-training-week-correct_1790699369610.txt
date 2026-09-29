@@ -1,0 +1,512 @@
+Please make one targeted calendar/training-week correction to Isabel’s Fall Strength Journal.
+
+IMPORTANT:
+Do NOT redesign the app.
+Do NOT change the workout program.
+Do NOT change the workout sequence.
+Do NOT remove or reset any saved data.
+Do NOT change the existing IndexedDB database, storage keys, backup system, PWA behavior, noindex/nofollow settings, unfinished-workout behavior, or previous-session tracking.
+
+The app is working well.
+
+I only need the day-numbering and week-boundary logic corrected.
+
+==================================================
+CORRECT DAY / WEEK SYSTEM
+==================================================
+
+The current calendar logic needs to be changed.
+
+The journal should now begin:
+
+Monday, September 28, 2026
+
+That is:
+
+DAY 1
+
+Tuesday, September 29, 2026 is:
+
+DAY 2
+
+The weekly day numbers must ALWAYS correspond to:
+
+Monday = Day 1
+Tuesday = Day 2
+Wednesday = Day 3
+Thursday = Day 4
+Friday = Day 5
+Saturday = Day 6
+Sunday = Day 7
+
+Then the numbering resets the following Monday:
+
+Monday = Day 1 again.
+
+Example:
+
+Week 1
+
+Monday, September 28 = Day 1
+Tuesday, September 29 = Day 2
+Wednesday, September 30 = Day 3
+Thursday, October 1 = Day 4
+Friday, October 2 = Day 5
+Saturday, October 3 = Day 6
+Sunday, October 4 = Day 7
+
+Week 2
+
+Monday, October 5 = Day 1
+Tuesday, October 6 = Day 2
+Wednesday, October 7 = Day 3
+Thursday, October 8 = Day 4
+Friday, October 9 = Day 5
+Saturday, October 10 = Day 6
+Sunday, October 11 = Day 7
+
+Continue this Monday-through-Sunday structure throughout the entire journal.
+
+==================================================
+TRACKING PERIOD
+==================================================
+
+Because Day 1 is now Monday, September 28, 2026, change the one-year tracking period to:
+
+START:
+September 28, 2026
+
+END:
+September 28, 2027
+
+This keeps the journal one full year.
+
+Do not delete or overwrite any information already entered for September 29.
+
+If data already exists on September 29, preserve it exactly as-is.
+
+That entry should simply now be displayed as:
+
+Tuesday, September 29, 2026
+Day 2
+
+Do not move that saved data to September 28.
+
+September 28 should exist as its own Day 1 entry.
+
+==================================================
+WEEK BOUNDARIES
+==================================================
+
+The weekly system should now use actual Monday-through-Sunday weeks.
+
+Do NOT use rolling 7-day periods beginning from an arbitrary date other than Monday.
+
+Week 1:
+
+Monday, September 28, 2026
+through
+Sunday, October 4, 2026
+
+Week 2:
+
+Monday, October 5
+through
+Sunday, October 11
+
+Week 3:
+
+Monday, October 12
+through
+Sunday, October 18
+
+Continue this structure throughout the journal.
+
+==================================================
+RECOVERY DAY LOGIC
+==================================================
+
+Keep the existing recovery rule:
+
+Each Monday-through-Sunday week allows:
+
+2 recovery days.
+
+Those recovery days can occur on any days of that week.
+
+Example:
+
+Monday
+Workout
+
+Tuesday
+Workout
+
+Wednesday
+Recovery
+
+Thursday
+Workout
+
+Friday
+Recovery
+
+Saturday
+Workout
+
+Sunday
+Workout
+
+That is valid.
+
+If a third recovery day occurs between Monday and Sunday:
+
+Allow it.
+
+But count that extra recovery day toward missed-workout consistency.
+
+At the next Monday:
+
+The weekly recovery allowance resets back to:
+
+0 / 2
+
+Do NOT carry unused or extra recovery days into the next week.
+
+==================================================
+WORKOUT SEQUENCE MUST REMAIN INDEPENDENT
+==================================================
+
+This calendar correction must NOT attach workouts to specific weekdays.
+
+The workout order must remain:
+
+Workout 1
+Core, Back Capacity, Hip Mobility + Light Upper Body
+
+Workout 2
+Full Legs A
+
+Workout 3
+Upper Body + Beginner Run
+
+Workout 4
+Glutes + Core
+
+Workout 5
+Conservative Plyometrics + Full Legs B
+
+Then repeat.
+
+Monday being Day 1 does NOT mean Monday must always be Workout 1.
+
+The Day 1–Day 7 number represents the calendar day of the week only.
+
+The workout sequence remains based only on completed workouts.
+
+Example:
+
+Monday / Day 1
+Workout 1
+
+Tuesday / Day 2
+Workout 2
+
+Wednesday / Day 3
+Recovery
+
+Thursday / Day 4
+Workout 3
+
+Friday / Day 5
+Recovery
+
+Saturday / Day 6
+Workout 4
+
+Sunday / Day 7
+Workout 5
+
+The following Monday becomes:
+
+Day 1
+
+and the next workout becomes:
+
+Workout 1
+
+because Workout 5 was completed Sunday.
+
+Another example:
+
+Monday / Day 1
+Workout 1
+
+Tuesday / Day 2
+Recovery
+
+Wednesday / Day 3
+Workout 2
+
+Thursday / Day 4
+Workout 3
+
+Friday / Day 5
+Recovery
+
+Saturday / Day 6
+Workout 4
+
+Sunday / Day 7
+Workout 5
+
+This is also valid.
+
+==================================================
+DAILY DISPLAY
+==================================================
+
+On the Daily screen, clearly show both:
+
+Actual weekday/date
+
+and
+
+Day number within the week.
+
+Example:
+
+Tuesday, September 29, 2026
+
+Day 2
+
+The actual current-date header should still say something like:
+
+Today is Tuesday, September 29, 2026
+
+If today is Tuesday, it should also indicate:
+
+Day 2
+
+Keep this simple and visually consistent with the existing design.
+
+==================================================
+WEEKLY SCREEN
+==================================================
+
+Update the Weekly section so every report corresponds to:
+
+Monday through Sunday.
+
+Example:
+
+Week 1
+Sep 28 – Oct 4
+
+Week 2
+Oct 5 – Oct 11
+
+Week 3
+Oct 12 – Oct 18
+
+The report should calculate:
+
+Morning routine percentage
+
+Workouts completed
+
+Recovery days used out of 2
+
+Skipped workouts
+
+Most missed morning movement
+
+Most missed workout exercise
+
+Consistency suggestions
+
+using only that Monday-through-Sunday period.
+
+==================================================
+PROGRESS CARDS
+==================================================
+
+The Daily progress cards must use the current Monday-through-Sunday week.
+
+Example on Tuesday:
+
+Morning Routine
+100%
+
+Workouts
+1 / 5
+
+Recovery Days
+0 / 2
+
+Next Session
+Workout 2
+
+At midnight Sunday → Monday:
+
+Weekly cards should begin a new weekly period.
+
+The recovery count resets.
+
+The weekly workout count resets.
+
+The workout SEQUENCE does not reset unless the completed workout history naturally causes it to cycle.
+
+==================================================
+DATE NAVIGATION
+==================================================
+
+Keep all existing date behavior.
+
+Previous Day
+Next Day
+Return to Today
+
+Still use device-local date/time.
+
+Midnight rollover behavior should remain intact.
+
+Historical dates should remain selected if Isabel is intentionally reviewing them.
+
+==================================================
+DATA MIGRATION / SAFETY
+==================================================
+
+This change must preserve existing journal data.
+
+Do not:
+
+clear IndexedDB
+
+clear localStorage
+
+replace the existing database
+
+change storage keys unnecessarily
+
+reset workout history
+
+reset sequence history
+
+erase September 29 entries
+
+erase previous-session information
+
+If internal weekly calculations were stored rather than derived, safely recalculate them from the existing dated records.
+
+Prefer deriving:
+
+week number
+
+day number
+
+weekly recovery count
+
+weekly workout count
+
+from each entry’s actual calendar date.
+
+==================================================
+BACKUP COMPATIBILITY
+==================================================
+
+Update backup validation so the new valid tracking period is:
+
+September 28, 2026 through September 28, 2027.
+
+Existing valid backups created before this calendar correction should remain importable when possible.
+
+Do not reject a previously valid app-generated backup solely because its old configured start date was September 29, 2026.
+
+Safely migrate it to the new calendar logic.
+
+Do not move or alter the actual dates of its saved entries.
+
+==================================================
+PLEASE TEST
+==================================================
+
+TEST 1
+
+September 28, 2026 displays:
+
+Monday
+Day 1
+
+TEST 2
+
+September 29, 2026 displays:
+
+Tuesday
+Day 2
+
+TEST 3
+
+October 4, 2026 displays:
+
+Sunday
+Day 7
+
+TEST 4
+
+October 5, 2026 displays:
+
+Monday
+Day 1
+
+TEST 5
+
+Two recovery days between Monday and Sunday show:
+
+2 / 2
+
+and do not count as skipped.
+
+TEST 6
+
+A third recovery day during that same Monday–Sunday week counts as one additional missed-workout consistency day.
+
+TEST 7
+
+The following Monday resets recovery count to:
+
+0 / 2
+
+TEST 8
+
+Rest days do not advance the workout sequence.
+
+TEST 9
+
+Starting a new Monday does not automatically reset the workout sequence.
+
+Only completed workouts determine the next workout.
+
+TEST 10
+
+Existing September 29 saved data remains on September 29.
+
+It is not moved or deleted.
+
+TEST 11
+
+Weekly reports now use Monday–Sunday boundaries.
+
+TEST 12
+
+Existing backup files from the app remain compatible when reasonably possible.
+
+==================================================
+FINAL REQUIREMENT
+==================================================
+
+Please treat this as a small calendar-logic correction.
+
+Do not rebuild or redesign the application.
+
+Everything else is currently working and should remain unchanged.

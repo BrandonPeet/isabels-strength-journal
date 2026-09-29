@@ -61,7 +61,7 @@ test('rejects unrelated, malformed and future-version backups', () => {
 });
 
 test('rejects impossible, out-of-period and duplicate dates, without accepting any partial days', () => {
-  for (const date of ['2026-09-31', '2027-02-29', '2026-09-28', '2027-09-30', '2026-9-29']) {
+  for (const date of ['2026-09-31', '2027-02-29', '2026-09-27', '2027-09-30', '2026-9-29']) {
     const backup = clone();
     backup.days[0].date = date;
     invalid(backup);
@@ -71,6 +71,27 @@ test('rejects impossible, out-of-period and duplicate dates, without accepting a
   invalid(backup);
   backup.days[1] = { ...backup.days[0] };
   invalid(backup);
+});
+
+test('new first and final tracking dates are valid backup entries', () => {
+  const backup = clone();
+  backup.days = [
+    { ...backup.days[0], date: '2026-09-28' },
+    { ...backup.days[0], date: '2027-09-28' },
+  ];
+  assert.deepEqual(parseBackup(JSON.stringify(backup)).days.map((d) => d.date), ['2026-09-28', '2027-09-28']);
+});
+
+test('old final-day record survives export and reimport without changing its date or exercise data', () => {
+  const old = { ...day, date: '2027-09-29', notes: 'Old final-day note' };
+  const backup = buildBackup({ [old.date]: old, [day.date]: day }, { showMessages: false });
+  const restored = parseBackup(JSON.stringify(backup));
+  assert.deepEqual(restored.days.map((d) => d.date), ['2026-09-29', '2027-09-29']);
+  assert.equal(restored.days[1].notes, old.notes);
+  assert.deepEqual(restored.days[1].workout?.exercises, old.workout?.exercises);
+  assert.deepEqual(parseBackup(JSON.stringify(buildBackup(
+    Object.fromEntries(restored.days.map((d) => [d.date, d])), restored.settings,
+  ))).days.map((d) => d.date), ['2026-09-29', '2027-09-29']);
 });
 
 test('rejects malformed supplied morning, recovery, workout, sets, notes and unfinished fields', () => {

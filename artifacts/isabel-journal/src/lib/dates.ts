@@ -1,5 +1,5 @@
-export const START_KEY = '2026-09-29';
-export const END_KEY = '2027-09-29';
+export const START_KEY = '2026-09-28';
+export const END_KEY = '2027-09-28';
 
 export function toKey(d: Date): string {
   const y = d.getFullYear();
@@ -30,7 +30,7 @@ export function weekOf(key: string): number {
 }
 
 export function dayOfWeek(key: string): number {
-  return (daysBetween(START_KEY, key) % 7) + 1;
+  return ((fromKey(key).getDay() + 6) % 7) + 1;
 }
 
 export function weekRange(week: number): { start: string; end: string; days: string[] } {
